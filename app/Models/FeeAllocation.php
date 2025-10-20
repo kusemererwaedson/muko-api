@@ -20,4 +20,9 @@ class FeeAllocation extends Model
     {
         return $this->belongsTo(FeeGroup::class);
     }
+
+    public function feePayments()
+    {
+        return $this->hasMany(FeePayment::class);
+    }
 }

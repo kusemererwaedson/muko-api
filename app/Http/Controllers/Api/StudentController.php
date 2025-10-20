@@ -10,7 +10,7 @@ class StudentController extends Controller
 {
     public function index()
     {
-        $students = Student::with(['feeAllocations.feeGroup.feeType', 'feePayments'])
+        $students = Student::with(['feeAllocations.feeGroup.feeType', 'feeAllocations.feePayments', 'feePayments'])
             ->latest()
             ->get();
         
@@ -24,13 +24,18 @@ class StudentController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'class' => 'required|string|max:50',
+            'section' => 'nullable|string|max:10',
+            'roll' => 'nullable|string|max:20',
             'gender' => 'required|in:male,female',
+            'birthday' => 'nullable|date',
             'admission_date' => 'required|date',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
             'guardian_name' => 'required|string|max:255',
             'guardian_phone' => 'required|string|max:20',
             'guardian_email' => 'nullable|email|max:255',
             'guardian_relationship' => 'nullable|string|max:50',
-            'address' => 'nullable|string|max:500',
         ]);
 
         $student = Student::create($request->all());
@@ -50,13 +55,18 @@ class StudentController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'class' => 'required|string|max:50',
+            'section' => 'nullable|string|max:10',
+            'roll' => 'nullable|string|max:20',
             'gender' => 'required|in:male,female',
+            'birthday' => 'nullable|date',
             'admission_date' => 'required|date',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
             'guardian_name' => 'required|string|max:255',
             'guardian_phone' => 'required|string|max:20',
             'guardian_email' => 'nullable|email|max:255',
             'guardian_relationship' => 'nullable|string|max:50',
-            'address' => 'nullable|string|max:500',
         ]);
 
         $student->update($request->all());
