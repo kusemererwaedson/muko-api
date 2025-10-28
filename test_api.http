@@ -1,0 +1,111 @@
+### Login
+POST http://localhost:8000/api/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password"
+}
+
+### Create Level
+POST http://localhost:8000/api/academic/levels
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "O-Level",
+  "type": "Secondary",
+  "description": "Ordinary Level"
+}
+
+### Create Another Level
+POST http://localhost:8000/api/academic/levels
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "A-Level",
+  "type": "Advanced",
+  "description": "Advanced Level"
+}
+
+### Get All Levels
+GET http://localhost:8000/api/academic/levels
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Create Class
+POST http://localhost:8000/api/academic/classes
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "S1",
+  "level_id": 1,
+  "year_of_study": 1,
+  "capacity": 120
+}
+
+### Create Another Class
+POST http://localhost:8000/api/academic/classes
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "S2",
+  "level_id": 1,
+  "year_of_study": 2,
+  "capacity": 120
+}
+
+### Get All Classes
+GET http://localhost:8000/api/academic/classes
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Create Stream
+POST http://localhost:8000/api/academic/streams
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "A",
+  "class_id": 1,
+  "capacity": 40
+}
+
+### Create Another Stream
+POST http://localhost:8000/api/academic/streams
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "name": "B",
+  "class_id": 1,
+  "capacity": 40
+}
+
+### Get All Streams
+GET http://localhost:8000/api/academic/streams
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Create Student
+POST http://localhost:8000/api/students
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "lin": "LIN2025001",
+  "registration_no": "REG2025001",
+  "first_name": "John",
+  "middle_name": "Paul",
+  "last_name": "Doe",
+  "class_id": 1,
+  "stream_id": 1,
+  "gender": "male",
+  "birthday": "2010-01-15",
+  "admission_date": "2025-01-01",
+  "address": "123 Main St, Kampala",
+  "guardian_name": "Jane Doe",
+  "guardian_phone": "+256700123456",
+  "guardian_email": "jane@example.com",
+  "guardian_relationship": "mother"
+}

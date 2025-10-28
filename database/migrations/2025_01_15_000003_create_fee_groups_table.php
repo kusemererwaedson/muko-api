@@ -12,12 +12,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('class');
-            $table->unsignedBigInteger('fee_type_id');
+            $table->foreignId('fee_type_id')->constrained()->onDelete('cascade');
             $table->decimal('amount', 10, 2);
             $table->date('due_date');
+            $table->foreignId('created_by')->nullable()->constrained('users');
+            $table->foreignId('updated_by')->nullable()->constrained('users');
             $table->timestamps();
-
-            $table->foreign('fee_type_id')->references('id')->on('fee_types');
         });
     }
 
