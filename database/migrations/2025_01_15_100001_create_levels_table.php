@@ -8,9 +8,10 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('fee_types', function (Blueprint $table) {
+        Schema::create('levels', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
+            $table->string('name');
+            $table->enum('type', ['Primary', 'Secondary', 'Advanced']);
             $table->text('description')->nullable();
             $table->timestamps();
         });
@@ -18,6 +19,6 @@ return new class extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('fee_types');
+        Schema::dropIfExists('levels');
     }
 };

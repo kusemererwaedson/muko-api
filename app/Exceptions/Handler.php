@@ -53,7 +53,7 @@ class Handler extends ExceptionHandler
 
     public function render($request, Throwable $exception)
     {
-        if ($request->is('api/*')) {
+        if ($request->is('api/*') || $request->expectsJson()) {
             if ($exception instanceof MethodNotAllowedHttpException) {
                 return response()->json([
                     'message' => 'Method not allowed',
@@ -66,6 +66,24 @@ class Handler extends ExceptionHandler
                     'message' => 'Route not found'
                 ], 404);
             }
+
+            if ($exception instanceof \Illuminate\Auth\AuthenticationException) {
+                return response()->json([
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            if ($exception instanceof \Illuminate\Validation\ValidationException) {
+                return response()->json([
+                    'message' => 'Validation failed',
+                    'errors' => $exception->errors()
+                ], 422);
+            }
+
+            return response()->json([
+                'message' => $exception->getMessage() ?: 'Server error',
+                'error' => get_class($exception)
+            ], 500);
         }
 
         return parent::render($request, $exception);

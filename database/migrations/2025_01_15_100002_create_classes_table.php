@@ -8,19 +8,18 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('fee_groups', function (Blueprint $table) {
+        Schema::create('classes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('class');
-            $table->foreignId('fee_type_id')->constrained();
-            $table->decimal('amount', 10, 2);
-            $table->date('due_date');
+            $table->foreignId('level_id')->constrained()->onDelete('cascade');
+            $table->integer('year_of_study');
+            $table->integer('capacity')->nullable();
             $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('fee_groups');
+        Schema::dropIfExists('classes');
     }
 };

@@ -8,16 +8,17 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('fee_types', function (Blueprint $table) {
+        Schema::create('streams', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->text('description')->nullable();
+            $table->foreignId('class_id')->constrained()->onDelete('cascade');
+            $table->integer('capacity')->nullable();
             $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::dropIfExists('fee_types');
+        Schema::dropIfExists('streams');
     }
 };

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EmailLog;
 use App\Models\Student;
 use App\Models\FeeAllocation;
+use App\Models\SmsLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
@@ -93,6 +94,77 @@ class CommunicationController extends Controller
             'sent_count' => $emailsSent,
             'failed_count' => $emailsFailed
         ]);
+    }
+
+    public function smsLogs(): JsonResponse
+    {
+        $smsLogs = SmsLog::orderBy('created_at', 'desc')->limit(100)->get();
+        return response()->json($smsLogs);
+    }
+
+    public function sendSms(Request $request): JsonResponse
+    {
+        $request->validate([
+            'recipients' => 'required|in:all,class,level,defaulters',
+            'message' => 'required|string|max:160',
+            'class_id' => 'nullable|exists:classes,id',
+            'level_id' => 'nullable|exists:levels,id',
+            'schedule_date' => 'nullable|date|after:now',
+        ]);
+
+        $query = Student::where('active', true);
+
+        switch ($request->recipients) {
+            case 'class':
+                $query->where('class_id', $request->class_id);
+                break;
+            case 'level':
+                $query->whereHas('class', function($q) use ($request) {
+                    $q->where('level_id', $request->level_id);
+                });
+                break;
+            case 'defaulters':
+                $query->whereHas('feeAllocations', function($q) {
+                    $q->where('status', '!=', 'paid');
+                });
+                break;
+        }
+
+        $students = $query->get();
+        $recipientCount = $students->count();
+        $deliveredCount = 0;
+
+        foreach ($students as $student) {
+            if (!$student->guardian_phone) continue;
+
+            try {
+                $this->sendSmsMessage($student->guardian_phone, $request->message);
+                $deliveredCount++;
+            } catch (\Exception $e) {
+                // Log failed SMS
+            }
+        }
+
+        $smsLog = SmsLog::create([
+            'message' => $request->message,
+            'recipient_count' => $recipientCount,
+            'delivered_count' => $deliveredCount,
+            'status' => $request->schedule_date ? 'scheduled' : 'sent',
+            'scheduled_at' => $request->schedule_date,
+        ]);
+
+        return response()->json([
+            'message' => 'SMS sent successfully',
+            'recipients' => $recipientCount,
+            'delivered' => $deliveredCount,
+            'sms_log' => $smsLog
+        ]);
+    }
+
+    private function sendSmsMessage($phone, $message)
+    {
+        // Integrate with SMS provider here
+        return true;
     }
 
     private function calculateStudentBalance(Student $student)
