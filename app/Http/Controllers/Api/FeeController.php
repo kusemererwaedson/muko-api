@@ -20,20 +20,20 @@ class FeeController extends Controller
     public function types(Request $request): JsonResponse
     {
         $query = FeeType::query();
-        
+
         if ($request->has('search')) {
             $search = $request->get('search');
             $query->where('name', 'like', "%{$search}%");
         }
-        
+
         if ($request->has('from_date')) {
             $query->where('from', '>=', $request->get('from_date'));
         }
-        
+
         if ($request->has('to_date')) {
             $query->where('to', '<=', $request->get('to_date'));
         }
-        
+
         $perPage = $request->get('per_page', 15);
         $types = $query->latest()->paginate($perPage);
 
@@ -56,6 +56,7 @@ class FeeController extends Controller
                 $validated['edited_by'] = auth()->id() ?? 1;
                 $types[] = FeeType::create($validated);
             }
+
             return response()->json($types, 201);
         }
 
@@ -68,34 +69,35 @@ class FeeController extends Controller
         $validated['created_by'] = auth()->id() ?? 1;
         $validated['edited_by'] = auth()->id() ?? 1;
         $type = FeeType::create($validated);
+
         return response()->json($type, 201);
     }
 
     public function groups(Request $request): JsonResponse
     {
         $query = FeeGroup::with('feeType');
-        
+
         if ($request->has('search')) {
             $search = $request->get('search');
             $query->where('name', 'like', "%{$search}%");
         }
-        
+
         if ($request->has('class')) {
             $query->where('class', $request->get('class'));
         }
-        
+
         if ($request->has('fee_type_id')) {
             $query->where('fee_type_id', $request->get('fee_type_id'));
         }
-        
+
         if ($request->has('min_amount')) {
             $query->where('amount', '>=', $request->get('min_amount'));
         }
-        
+
         if ($request->has('max_amount')) {
             $query->where('amount', '<=', $request->get('max_amount'));
         }
-        
+
         $perPage = $request->get('per_page', 15);
         $groups = $query->latest()->paginate($perPage);
 
@@ -117,6 +119,7 @@ class FeeController extends Controller
                 ])->validate();
                 $groups[] = FeeGroup::create($validated);
             }
+
             return response()->json($groups, 201);
         }
 
@@ -128,30 +131,31 @@ class FeeController extends Controller
             'due_date' => 'required|date',
         ]);
         $group = FeeGroup::create($request->all());
+
         return response()->json($group->load('feeType'), 201);
     }
 
     public function allocations(Request $request): JsonResponse
     {
         $query = FeeAllocation::with(['student', 'feeGroup.feeType']);
-        
+
         if ($request->has('student_id')) {
             $query->where('student_id', $request->get('student_id'));
         }
-        
+
         if ($request->has('fee_group_id')) {
             $query->where('fee_group_id', $request->get('fee_group_id'));
         }
-        
+
         if ($request->has('status')) {
             $query->where('status', $request->get('status'));
         }
-        
+
         if ($request->has('overdue')) {
             $query->where('due_date', '<', now())
                   ->where('status', '!=', 'paid');
         }
-        
+
         $perPage = $request->get('per_page', 15);
         $allocations = $query->latest()->paginate($perPage);
 
@@ -177,6 +181,7 @@ class FeeController extends Controller
                     'status' => 'pending',
                 ]);
             }
+
             return response()->json($allocations, 201);
         }
 
@@ -192,37 +197,38 @@ class FeeController extends Controller
             'due_date' => $feeGroup->due_date,
             'status' => 'pending',
         ]);
+
         return response()->json($allocation->load(['student', 'feeGroup']), 201);
     }
 
     public function payments(Request $request): JsonResponse
     {
         $query = FeePayment::with(['student', 'feeAllocation.feeGroup.feeType']);
-        
+
         if ($request->has('student_id')) {
             $query->where('student_id', $request->get('student_id'));
         }
-        
+
         if ($request->has('payment_method')) {
             $query->where('payment_method', $request->get('payment_method'));
         }
-        
+
         if ($request->has('from_date')) {
             $query->whereDate('payment_date', '>=', $request->get('from_date'));
         }
-        
+
         if ($request->has('to_date')) {
             $query->whereDate('payment_date', '<=', $request->get('to_date'));
         }
-        
+
         if ($request->has('min_amount')) {
             $query->where('amount', '>=', $request->get('min_amount'));
         }
-        
+
         if ($request->has('max_amount')) {
             $query->where('amount', '<=', $request->get('max_amount'));
         }
-        
+
         $perPage = $request->get('per_page', 15);
         $payments = $query->latest('payment_date')->paginate($perPage);
 
@@ -253,6 +259,7 @@ class FeeController extends Controller
                     'collected_by' => auth()->id() ?? 1,
                 ]);
             }
+
             return response()->json($payments, 201);
         }
 
@@ -273,81 +280,113 @@ class FeeController extends Controller
             'remarks' => $request->remarks,
             'collected_by' => auth()->id() ?? 1,
         ]);
+
         return response()->json($payment->load(['student', 'feeAllocation.feeGroup.feeType']), 201);
     }
 
-    public function dashboard(): JsonResponse
-    {
-        $totalStudents = Student::where('active', true)->count();
-        $totalCollected = FeePayment::sum('amount');
-        $totalAllocated = FeeAllocation::sum('amount');
-        $totalDue = $totalAllocated - $totalCollected;
-        $overdueCount = FeeAllocation::where('due_date', '<', now())
-                                   ->where('status', '!=', 'paid')
-                                   ->count();
+public function dashboard(): JsonResponse
+{
+    $totalStudents = Student::where('active', true)->count();
+    $totalCollected = FeePayment::sum('amount');
+    $totalAllocated = FeeAllocation::sum('amount');
+    $totalDue = $totalAllocated - $totalCollected;
+    $overdueCount = FeeAllocation::where('due_date', '<', now())
+                               ->where('status', '!=', 'paid')
+                               ->count();
 
-        $overdueAmount = FeeAllocation::where('due_date', '<', now())
-                                    ->where('status', '!=', 'paid')
-                                    ->sum('amount');
+    $overdueAmount = FeeAllocation::where('due_date', '<', now())
+                                ->where('status', '!=', 'paid')
+                                ->sum('amount');
 
-        $recentPayments = FeePayment::with(['student', 'feeAllocation.feeGroup.feeType'])
-                                   ->orderBy('payment_date', 'desc')
-                                   ->limit(10)
-                                   ->get();
+    $recentPayments = FeePayment::with(['student', 'feeAllocation.feeGroup.feeType'])
+                               ->orderBy('payment_date', 'desc')
+                               ->limit(10)
+                               ->get();
 
-        // Monthly collection data for chart (12 months)
-        $monthlyData = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $monthlyData[$i] = 0;
-        }
+    // Monthly collection data for chart (12 months)
+    $monthlyData = [];
+    for ($i = 1; $i <= 12; $i++) {
+        $monthlyData[$i] = 0;
+    }
 
-        $monthlyCollection = FeePayment::select(
-            DB::raw('MONTH(payment_date) as month'),
+    $monthlyCollection = FeePayment::select(
+        DB::raw('MONTH(payment_date) as month'),
+        DB::raw('SUM(amount) as total')
+    )
+    ->whereYear('payment_date', date('Y'))
+    ->groupBy('month')
+    ->orderBy('month')
+    ->get();
+
+    foreach ($monthlyCollection as $month) {
+        $monthlyData[$month->month] = $month->total;
+    }
+
+    // Monthly expense data (12 months)
+    $monthlyExpenseData = [];
+    for ($i = 1; $i <= 12; $i++) {
+        $monthlyExpenseData[$i] = 0;
+    }
+
+    $monthlyExpenses = DB::table('transactions')
+        ->select(
+            DB::raw('MONTH(date) as month'),
             DB::raw('SUM(amount) as total')
         )
-        ->whereYear('payment_date', date('Y'))
+        ->where('type', 'debit')
+        ->whereYear('date', date('Y'))
         ->groupBy('month')
         ->orderBy('month')
         ->get();
 
-        foreach ($monthlyCollection as $month) {
-            $monthlyData[$month->month] = $month->total;
-        }
-
-        // Monthly expense data (12 months)
-        $monthlyExpenseData = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $monthlyExpenseData[$i] = 0;
-        }
-
-        $monthlyExpenses = DB::table('transactions')
-            ->select(
-                DB::raw('MONTH(date) as month'),
-                DB::raw('SUM(amount) as total')
-            )
-            ->where('type', 'debit')
-            ->whereYear('date', date('Y'))
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-
-        foreach ($monthlyExpenses as $month) {
-            $monthlyExpenseData[$month->month] = $month->total;
-        }
-
-        $expenseCategories = array_values($monthlyExpenseData);
-
-        return response()->json([
-            'totalStudents' => $totalStudents,
-            'totalCollected' => $totalCollected,
-            'totalDue' => $totalDue,
-            'overdueCount' => $overdueCount,
-            'overdueAmount' => $overdueAmount,
-            'recentPayments' => $recentPayments,
-            'monthlyCollection' => array_values($monthlyData),
-            'expenseCategories' => $expenseCategories,
-        ]);
+    foreach ($monthlyExpenses as $month) {
+        $monthlyExpenseData[$month->month] = $month->total;
     }
+
+    $expenseCategories = array_values($monthlyExpenseData);
+
+    // NEW: Calculate total expenses (all debit transactions)
+    $totalExpenses = DB::table('transactions')
+        ->where('type', 'debit')
+        ->sum('amount');
+
+    // NEW: Get account balances by account type
+    $cashAtHand = DB::table('accounts')
+        ->where('account_type', 'cash')
+        ->sum('current_balance');
+
+    $cashInBank = DB::table('accounts')
+        ->where('account_type', 'bank')
+        ->sum('current_balance');
+
+    $cashOnMobileMoney = DB::table('accounts')
+        ->where('account_type', 'mobile_money')
+        ->sum('current_balance');
+
+    // NEW: Get all accounts with their current balances
+    $accounts = DB::table('accounts')
+        ->select('id', 'name', 'account_type', 'provider', 'current_balance')
+        ->orderBy('account_type')
+        ->orderBy('name')
+        ->get();
+
+    return response()->json([
+        'totalStudents' => $totalStudents,
+        'totalCollected' => $totalCollected,
+        'totalDue' => $totalDue,
+        'overdueCount' => $overdueCount,
+        'overdueAmount' => $overdueAmount,
+        'recentPayments' => $recentPayments,
+        'monthlyCollection' => array_values($monthlyData),
+        'expenseCategories' => $expenseCategories,
+        // NEW FIELDS
+        'totalExpenses' => $totalExpenses,
+        'cashAtHand' => $cashAtHand,
+        'cashInBank' => $cashInBank,
+        'cashOnMobileMoney' => $cashOnMobileMoney,
+        'accounts' => $accounts,
+    ]);
+}
 
     public function sendReminders(): JsonResponse
     {
@@ -397,13 +436,13 @@ class FeeController extends Controller
         $query = FeeAllocation::with(['student.schoolClass', 'feeGroup.feeType', 'feePayments']);
 
         if ($request->has('class')) {
-            $query->whereHas('student.schoolClass', function($q) use ($request) {
+            $query->whereHas('student.schoolClass', function ($q) use ($request) {
                 $q->where('name', $request->get('class'));
             });
         }
 
         if ($request->has('fee_type_id')) {
-            $query->whereHas('feeGroup', function($q) use ($request) {
+            $query->whereHas('feeGroup', function ($q) use ($request) {
                 $q->where('fee_type_id', $request->get('fee_type_id'));
             });
         }
@@ -421,7 +460,7 @@ class FeeController extends Controller
 
         $allocations = $query->get();
 
-        $report = $allocations->map(function($allocation) {
+        $report = $allocations->map(function ($allocation) {
             $totalPaid = $allocation->feePayments->sum('amount');
             $balance = $allocation->amount - $totalPaid;
             $isOverdue = $allocation->due_date < now() && $balance > 0;
@@ -436,7 +475,7 @@ class FeeController extends Controller
                 'balance' => $balance,
                 'due_date' => $allocation->due_date,
                 'status' => $isOverdue ? 'overdue' : ($balance > 0 ? 'due' : 'paid'),
-                'days_overdue' => $isOverdue ? now()->diffInDays($allocation->due_date) : 0
+                'days_overdue' => $isOverdue ? now()->diffInDays($allocation->due_date) : 0,
             ];
         });
 
